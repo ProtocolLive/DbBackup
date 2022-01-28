@@ -1,39 +1,42 @@
 <?php
 //Protocol Corporation Ltda.
 //https://github.com/ProtocolLive/PhpLive/
-//Version 2021.06.29.00
+//Version 2022.01.28.00
+//For PHP >= 8
 
 class PhpLiveDbBackup{
-  private PhpLivePdo $PhpLivePdo;
+  private ?PhpLivePdo $PhpLivePdo = null;
   private array $Delete = [];
-  private string $Time;
-  private object $Zip;
+  private string $File;
+  private ZipArchive $Zip;
 
   public function __construct(PhpLivePdo &$PhpLivePdo){
     $this->PhpLivePdo = $PhpLivePdo;
   }
 
-  public function Tables(array $Options = []):string{
+  public function Tables(
+    string $Folder = __DIR__ . '/sql',
+    int $Progress = 1,
+    string $TranslateTables = 'tables',
+    string $TranslateFk = 'foreign keys'
+  ):string|false{
     if($this->PhpLivePdo === null):
       return false;
     endif;
-    $Options['Folder'] ??= '/sql/';
-    $Options['Prefix'] ??= '##';
-    $Options['Progress'] ??= 1;
-    $Options['Translate']['Tables'] ??= 'tables';
-    $Options['Translate']['FK'] ??= 'foreign keys';
-
-    $this->ZipOpen($Options['Folder'], 0);
-    $tables = $this->PhpLivePdo->Run("show tables like '" . $Options['Prefix'] . "%'");
-    if($Options['Progress'] != 0):
+    $this->ZipOpen($Folder, 0);
+    $tables = $this->PhpLivePdo->RunCustom("show tables like '%'", [
+      'OnlyFieldsName' => false
+    ]);
+    if($Progress != 0):
       $TablesCount = count($tables);
       $TablesLeft = 0;
-      printf('%d %s<br>0%%<br>', $TablesCount, $Options['Translate']['Tables']);
+      printf('%d %s<br>0%%<br>', $TablesCount, $TranslateTables);
     endif;
 
-    $file = fopen($Options['Folder'] . 'tables.sql', 'w');
+    $file = fopen($Folder . '/tables.sql', 'w');
     foreach($tables as $table):
-      $cols = $this->PhpLivePdo->Run('select COLUMN_NAME,
+      $cols = $this->PhpLivePdo->RunCustom("
+        select COLUMN_NAME,
           DATA_TYPE,
           CHARACTER_MAXIMUM_LENGTH,
           NUMERIC_PRECISION,
@@ -45,10 +48,9 @@ class PhpLiveDbBackup{
           COLUMN_KEY,
           COLLATION_NAME
         from information_schema.columns
-        where table_name=?
-        order by ordinal_position', [
-        [1, $table[0], PdoStr]
-      ]);
+        where table_name='" . $table[0] . "'
+        order by ordinal_position
+      ");
       $line = 'create table ' . $table[0] . "(\n";
       foreach($cols as $col):
         $line .= '  ' . $this->PhpLivePdo->Reserved($col['COLUMN_NAME']) . ' ' . $col['DATA_TYPE'];
@@ -85,23 +87,21 @@ class PhpLiveDbBackup{
         $line .= ",\n";
       endforeach;
       fwrite($file, substr($line, 0, -2) . "\n) ");
-      $table = $this->PhpLivePdo->Run('
+      $table = $this->PhpLivePdo->RunCustom("
         select
           ENGINE,
           TABLE_COLLATION
         from information_schema.tables
-        where table_name=?
-      ',[
-        [1, $table[0], PdoStr]
-      ]);
+        where table_name='" . $table[0] . "'
+      ");
       fwrite($file, 'engine=' . $table[0]['ENGINE'] . ' ');
       fwrite($file, 'collate=' . $table[0]['TABLE_COLLATION'] . ";\n\n");
-      if($Options['Progress'] != 0):
+      if($Progress != 0):
         printf('%d%%<br>', ++$TablesLeft * 100 / $TablesCount);
       endif;
     endforeach;
     //foreign keys
-    $cols = $this->PhpLivePdo->Run('
+    $cols = $this->PhpLivePdo->RunCustom('
       select
         rc.table_name,
         constraint_name,
@@ -116,76 +116,79 @@ class PhpLiveDbBackup{
       order by rc.table_name
     ');
     $TablesCount = count($cols);
-    if($Options['Progress'] != 0):
+    if($Progress != 0):
       $TablesLeft = 0;
-      printf('%d %s<br>0%%<br>', $TablesCount, $Options['Translate']['FK']);
+      printf('%d %s<br>0%%<br>', $TablesCount, $TranslateFk);
     endif;
     foreach($cols as $col):
       $line = 'alter table ' . $col['table_name'] . "\n";
       $line .= '  add constraint ' . $col['constraint_name'];
       $line .= ' foreign key(' . $col['column_name'] . ') references ';
       $line .= $col['referenced_table_name'] . '(' . $col['referenced_column_name'] . ') ';
-      $line .= 'on delete ' . $col['delete_rule'] . ' on update ' . $col['update_rule'] . ",\n";
+      $line .= 'on delete ' . strtolower($col['delete_rule']) . ' on update ' . strtolower($col['update_rule']) . ",\n";
       fwrite($file, substr($line, 0, -2) . ";\n\n");
-      if($Options['Progress'] != 0):
+      if($Progress != 0):
         printf('%d%%<br>', ++$TablesLeft * 100 / $TablesCount);
       endif;
     endforeach;
     fclose($file);
-    $this->Zip->addFile($Options['Folder'] . 'tables.sql', 'tables.sql');
+    $this->Zip->addFile($Folder . '/tables.sql', 'tables.sql');
     $this->ZipClose();
-    unlink($Options['Folder'] . 'tables.sql');
-    return substr($_SERVER['REQUEST_URI'], 0, strrpos($_SERVER['REQUEST_URI'], '/')) . $Options['Folder'] . $this->Time . '.zip';
+    unlink($Folder . '/tables.sql');
+    return substr($_SERVER['REQUEST_URI'], 0, strrpos($_SERVER['REQUEST_URI'], '/')) . $this->File;
   }
 
-  public function Data(array $Options = []):string{
+  public function Data(
+    string $Folder = __DIR__ . '/sql',
+    int $Progress = 2,
+    string $TranslateTables = 'tables',
+    string $TranslateRows = 'rows'
+  ):string{
     if($this->PhpLivePdo === null):
       return false;
     endif;
-    $Options['Folder'] ??= '/sql/';
-    $Options['Prefix'] ??= '##';
-    $Options['Progress'] ??= 2;
-    $Options['Translate']['Tables'] ??= 'tables';
-    $Options['Translate']['Rows'] ??= 'rows';
 
     $last = null;
-    $this->ZipOpen($Options['Folder'], 1);
-    $tables = $this->PhpLivePdo->Run("show tables like '" . $Options['Prefix'] . "%'");
-    if($Options['Progress'] != 0):
+    $this->ZipOpen($Folder, 1);
+    $tables = $this->PhpLivePdo->RunCustom("show tables like '%'", [
+      'OnlyFieldsName' => false
+    ]);
+    if($Progress != 0):
       $TablesCount = count($tables);
       $TablesLeft = 0;
-      printf('%d %s<br><br>0%%<br>', $TablesCount, $Options['Translate']['Tables']);
+      printf('%d %s<br><br>0%%<br>', $TablesCount, $TranslateTables);
     endif;
     foreach($tables as $table):
-      $this->PhpLivePdo->Run('lock table ' . $table[0] . ' write');
-      $rows = $this->PhpLivePdo->Run('select * from ' . $table[0]);
+      $this->PhpLivePdo->RunCustom('lock table ' . $table[0] . ' write');
+
+      $rows = $this->PhpLivePdo->RunCustom('select * from ' . $table[0]);
       $RowsCount = count($rows);
       $RowsLeft = 0;
-      if($Options['Progress'] == 2):
-        printf('%s (%d %s)<br>', $table[0], $RowsCount, $Options['Translate']['Rows']);
+      if($Progress == 2):
+        printf('%s (%d %s)<br>', $table[0], $RowsCount, $TranslateRows);
       endif;
       if($RowsCount > 0):
-        $file = fopen($Options['Folder'] . $table[0] . '.sql', 'w');
-        $this->Delete[] = $Options['Folder'] . $table[0] . '.sql';
+        $file = fopen($Folder . $table[0] . '.sql', 'w');
+        $this->Delete[] = $Folder . $table[0] . '.sql';
+
+        $temp = $this->PhpLivePdo->RunCustom('checksum table ' . $table[0]);
+        fwrite($file, '-- Table checksum ' . $temp[0]['Checksum'] . "\n\n");
+
         foreach($rows as $row):
           $cols = '';
           $values = '';
           foreach($row as $col => $value):
-            if(is_numeric($col) === false): // avoid duplicated rows returned by PDO
-              $cols .= $this->PhpLivePdo->Reserved($col) . ',';
-              if($value == ''):
-                $values .= 'null,';
-              elseif(is_numeric($value)):
-                $values .= $value . ',';
-              else:
-                $values .= "'" . str_replace("'", "''", $value) . "',";
-              endif;
+            $cols .= $this->PhpLivePdo->Reserved($col) . ',';
+            if($value === null):
+              $values .= 'null,';
+            else:
+              $values .= "'" . str_replace("'", "''", $value) . "',";
             endif;
           endforeach;
           $cols = substr($cols, 0, -1);
           $values = substr($values, 0, -1);
           fwrite($file, 'insert into ' . $table[0] . '(' . $cols . ') values(' . $values . ");\n");
-          if($Options['Progress'] == 2):
+          if($Progress == 2):
             $percent = ++$RowsLeft * 100 / $RowsCount;
             if(($percent % 25) == 0 and floor($percent) !== $last):
               printf('%d%%...', $percent);
@@ -193,31 +196,32 @@ class PhpLiveDbBackup{
             endif;
           endif;
         endforeach;
-        $this->PhpLivePdo->Run('unlock tables');
+        $this->PhpLivePdo->RunCustom('unlock tables');
         fclose($file);
-        $this->Zip->addFile($Options['Folder'] . $table[0] . '.sql', $table[0] . '.sql');
+        $this->Zip->addFile($Folder . $table[0] . '.sql', $table[0] . '.sql');
       endif;
-      if($Options['Progress'] != 0):
+      if($Progress != 0):
         printf('<br><br>%d%%<br>', ++$TablesLeft * 100 / $TablesCount);
       endif;
     endforeach;
     $this->ZipClose();
     $this->Delete();
-    return substr($_SERVER['REQUEST_URI'], 0, strrpos($_SERVER['REQUEST_URI'], '/')) . $Options['Folder'] . $this->Time . '.zip';
+    return substr($_SERVER['REQUEST_URI'], 0, strrpos($_SERVER['REQUEST_URI'], '/')) . $this->File;
   }
 
   private function ZipOpen(string $Folder, int $Type):void{
-    $this->Time = date('YmdHis');
     if(file_exists($Folder) == false):
       mkdir($Folder, 0755);
     endif;
     $this->Zip = new ZipArchive();
+    $this->File = date('Y-m-d-H-i-s-');
     if($Type == 0):
-      $temp = 'tables';
+      $this->File .= 'tables';
     else:
-      $temp = 'data';
+      $this->File .= 'data';
     endif;
-    $this->Zip->open($Folder . $temp . $this->Time . '.zip', ZipArchive::CREATE);
+    $this->File .= '.zip';
+    $this->Zip->open($Folder . '/' . $this->File, ZipArchive::CREATE);
   }
 
   private function ZipClose():void{
