@@ -1,7 +1,7 @@
 <?php
 //Protocol Corporation Ltda.
 //https://github.com/ProtocolLive/PhpLive/
-//Version 2022.01.28.00
+//Version 2022.01.29.00
 //For PHP >= 8
 
 class PhpLiveDbBackup{
@@ -24,9 +24,10 @@ class PhpLiveDbBackup{
       return false;
     endif;
     $this->ZipOpen($Folder, 0);
-    $tables = $this->PhpLivePdo->RunCustom("show tables like '%'", [
-      'OnlyFieldsName' => false
-    ]);
+    $tables = $this->PhpLivePdo->RunCustom(
+      "show tables like '%'",
+      OnlyFieldsName: false
+    );
     if($Progress != 0):
       $TablesCount = count($tables);
       $TablesLeft = 0;
@@ -150,9 +151,10 @@ class PhpLiveDbBackup{
 
     $last = null;
     $this->ZipOpen($Folder, 1);
-    $tables = $this->PhpLivePdo->RunCustom("show tables like '%'", [
-      'OnlyFieldsName' => false
-    ]);
+    $tables = $this->PhpLivePdo->RunCustom(
+      "show tables like '%'",
+      OnlyFieldsName: false
+    );
     if($Progress != 0):
       $TablesCount = count($tables);
       $TablesLeft = 0;
