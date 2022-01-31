@@ -1,7 +1,7 @@
 <?php
 //Protocol Corporation Ltda.
 //https://github.com/ProtocolLive/PhpLive/
-//Version 2022.01.29.00
+//Version 2022.01.30.00
 //For PHP >= 8
 
 class PhpLiveDbBackup{
@@ -113,7 +113,7 @@ class PhpLiveDbBackup{
         update_rule
       from
         information_schema.referential_constraints rc
-          left join information_schema.key_column_usage using(constraint_name)
+        left join information_schema.key_column_usage using(constraint_name)
       order by rc.table_name
     ');
     $TablesCount = count($cols);
@@ -134,6 +134,7 @@ class PhpLiveDbBackup{
     endforeach;
     fclose($file);
     $this->Zip->addFile($Folder . '/tables.sql', 'tables.sql');
+    $this->Zip->setEncryptionName('tables.sql', ZipArchive::EM_AES_256);
     $this->ZipClose();
     unlink($Folder . '/tables.sql');
     return substr($_SERVER['REQUEST_URI'], 0, strrpos($_SERVER['REQUEST_URI'], '/')) . $this->File;
@@ -201,6 +202,7 @@ class PhpLiveDbBackup{
         $this->PhpLivePdo->RunCustom('unlock tables');
         fclose($file);
         $this->Zip->addFile($Folder . $table[0] . '.sql', $table[0] . '.sql');
+        $this->Zip->setEncryptionName($table[0] . '.sql', ZipArchive::EM_AES_256);
       endif;
       if($Progress != 0):
         printf('<br><br>%d%%<br>', ++$TablesLeft * 100 / $TablesCount);
@@ -224,6 +226,7 @@ class PhpLiveDbBackup{
     endif;
     $this->File .= '.zip';
     $this->Zip->open($Folder . '/' . $this->File, ZipArchive::CREATE);
+    $this->Zip->setPassword($_SERVER['SERVER_NAME']);
   }
 
   private function ZipClose():void{
