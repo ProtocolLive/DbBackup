@@ -1,7 +1,7 @@
 <?php
 //Protocol Corporation Ltda.
 //https://github.com/ProtocolLive/PhpLive/
-//Version 2022.07.26.00
+//Version 2022.08.06.00
 //For PHP >= 8.1
 
 class PhpLiveDbBackup{
@@ -190,8 +190,8 @@ class PhpLiveDbBackup{
 
         $stm = $pdo->prepare('checksum table ' . $table[0]);
         $stm->execute();
-        $temp = $stm->fetchAll();
-        fwrite($file, '-- Table checksum ' . $temp[0][0] . "\n\n");
+        $temp = $stm->fetchAll(PDO::FETCH_ASSOC);
+        fwrite($file, '-- Table checksum ' . $temp[0]['Checksum'] . "\n\n");
 
         foreach($rows as $row):
           $cols = '';
