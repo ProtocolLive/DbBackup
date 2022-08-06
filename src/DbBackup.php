@@ -1,7 +1,7 @@
 <?php
 //Protocol Corporation Ltda.
 //https://github.com/ProtocolLive/PhpLive/
-//Version 2022.08.06.00
+//Version 2022.08.06.01
 //For PHP >= 8.1
 
 class PhpLiveDbBackup{
@@ -54,7 +54,7 @@ class PhpLiveDbBackup{
       ");
       $stm->execute();
       $cols = $stm->fetchAll(PDO::FETCH_ASSOC);
-      $line = 'create table ' . $table[0] . "(\n";
+      $line = 'create table ' . $table[0] . '(' . PHP_EOL;
       foreach($cols as $col):
         $line .= '  ' . $this->PhpLiveDb->Reserved($col['COLUMN_NAME']) . ' ' . $col['DATA_TYPE'];
         //Field size for integers is deprecated
@@ -87,9 +87,9 @@ class PhpLiveDbBackup{
         elseif($col['COLUMN_KEY'] == 'UNI'):
           $line .= ' unique key';
         endif;
-        $line .= ",\n";
+        $line .= ',' . PHP_EOL;
       endforeach;
-      fwrite($file, substr($line, 0, -2) . "\n) ");
+      fwrite($file, substr($line, 0, -2) . PHP_EOL . ') ');
       $stm = $pdo->prepare('
         select
           ENGINE,
@@ -101,7 +101,7 @@ class PhpLiveDbBackup{
       $stm->execute();
       $table = $stm->fetchAll(PDO::FETCH_ASSOC);
       fwrite($file, 'engine=' . $table[0]['ENGINE'] . ' ');
-      fwrite($file, 'collate=' . $table[0]['TABLE_COLLATION'] . ";\n\n");
+      fwrite($file, 'collate=' . $table[0]['TABLE_COLLATION'] . ';' . PHP_EOL . PHP_EOL);
       if($Progress != 0):
         printf("\r%d%%", ++$TablesLeft * 100 / $TablesCount);
       endif;
@@ -130,12 +130,12 @@ class PhpLiveDbBackup{
       printf('%d %s:' . PHP_EOL . '0%%', $TablesCount, $TranslateFk);
     endif;
     foreach($cols as $col):
-      $line = 'alter table ' . $col['table_name'] . "\n";
+      $line = 'alter table ' . $col['table_name'] . PHP_EOL;
       $line .= '  add constraint ' . $col['constraint_name'];
       $line .= ' foreign key(' . $col['column_name'] . ') references ';
       $line .= $col['referenced_table_name'] . '(' . $col['referenced_column_name'] . ') ';
-      $line .= 'on delete ' . strtolower($col['delete_rule']) . ' on update ' . strtolower($col['update_rule']) . ",\n";
-      fwrite($file, substr($line, 0, -2) . ";\n\n");
+      $line .= 'on delete ' . strtolower($col['delete_rule']) . ' on update ' . strtolower($col['update_rule']) . ',' . PHP_EOL;
+      fwrite($file, substr($line, 0, -2) . ';' . PHP_EOL . PHP_EOL);
       if($Progress != 0):
         printf("\r%d%%", ++$TablesLeft * 100 / $TablesCount);
       endif;
@@ -191,7 +191,7 @@ class PhpLiveDbBackup{
         $stm = $pdo->prepare('checksum table ' . $table[0]);
         $stm->execute();
         $temp = $stm->fetchAll(PDO::FETCH_ASSOC);
-        fwrite($file, '-- Table checksum ' . $temp[0]['Checksum'] . "\n\n");
+        fwrite($file, '-- Table checksum ' . $temp[0]['Checksum'] . PHP_EOL . PHP_EOL);
 
         foreach($rows as $row):
           $cols = '';
@@ -206,7 +206,7 @@ class PhpLiveDbBackup{
           endforeach;
           $cols = substr($cols, 0, -1);
           $values = substr($values, 0, -1);
-          fwrite($file, 'insert into ' . $table[0] . '(' . $cols . ') values(' . $values . ");\n");
+          fwrite($file, 'insert into ' . $table[0] . '(' . $cols . ') values(' . $values . ');' . PHP_EOL);
           if($Progress == 2):
             printf("\r%d%%", ++$RowsLeft * 100 / $RowsCount);
           endif;
