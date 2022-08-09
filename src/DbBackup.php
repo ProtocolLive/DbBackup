@@ -1,7 +1,7 @@
 <?php
 //Protocol Corporation Ltda.
 //https://github.com/ProtocolLive/PhpLive/
-//Version 2022.08.06.01
+//Version 2022.08.09.00
 //For PHP >= 8.1
 
 class PhpLiveDbBackup{
@@ -23,11 +23,15 @@ class PhpLiveDbBackup{
     if($this->PhpLiveDb === null):
       return false;
     endif;
+    if(PHP_SAPI === 'cli'):
+      restore_error_handler();
+      restore_exception_handler();
+    endif;
     $this->ZipOpen($Folder, 0);
     $pdo = $this->PhpLiveDb->GetCustom();
     $stm = $pdo->prepare("show full tables where Table_Type='base table'");
     $stm->execute();
-    $tables = $stm->fetchAll();
+    $tables = $stm->fetchAll(PDO::FETCH_BOTH);
     if($Progress != 0):
       $TablesCount = count($tables);
       $TablesLeft = 0;
@@ -136,7 +140,7 @@ class PhpLiveDbBackup{
       $line .= $col['referenced_table_name'] . '(' . $col['referenced_column_name'] . ') ';
       $line .= 'on delete ' . strtolower($col['delete_rule']) . ' on update ' . strtolower($col['update_rule']) . ',' . PHP_EOL;
       fwrite($file, substr($line, 0, -2) . ';' . PHP_EOL . PHP_EOL);
-      if($Progress != 0):
+      if($Progress != 0 and PHP_SAPI === 'cli'):
         printf("\r%d%%", ++$TablesLeft * 100 / $TablesCount);
       endif;
     endforeach;
@@ -158,11 +162,15 @@ class PhpLiveDbBackup{
     if($this->PhpLiveDb === null):
       return false;
     endif;
+    if(PHP_SAPI === 'cli'):
+      restore_error_handler();
+      restore_exception_handler();
+    endif;
     $this->ZipOpen($Folder, 1);
     $pdo = $this->PhpLiveDb->GetCustom();
     $stm = $pdo->prepare("show tables like '%'");
     $stm->execute();
-    $tables = $stm->fetchAll();
+    $tables = $stm->fetchAll(PDO::FETCH_BOTH);
     if($Progress != 0):
       $TablesCount = count($tables);
       $TablesLeft = 0;
@@ -207,7 +215,7 @@ class PhpLiveDbBackup{
           $cols = substr($cols, 0, -1);
           $values = substr($values, 0, -1);
           fwrite($file, 'insert into ' . $table[0] . '(' . $cols . ') values(' . $values . ');' . PHP_EOL);
-          if($Progress == 2):
+          if($Progress == 2 and PHP_SAPI === 'cli'):
             printf("\r%d%%", ++$RowsLeft * 100 / $RowsCount);
           endif;
         endforeach;
