@@ -1,7 +1,7 @@
 <?php
 //Protocol Corporation Ltda.
 //https://github.com/ProtocolLive/PhpLive/
-//Version 2022.08.27.03
+//Version 2022.08.27.04
 
 use ProtocolLive\PhpLiveDb\PhpLiveDb;
 
@@ -166,8 +166,7 @@ class PhpLiveDbBackup{
     endif;
     $this->ZipOpen($Folder, 1);
     $pdo = $this->PhpLiveDb->GetCustom();
-    $stm = $pdo->prepare("show tables like '%'");
-    $stm->execute();
+    $stm = $pdo->query("show tables like '%'");
     $tables = $stm->fetchAll(PDO::FETCH_BOTH);
     if($Progress != 0):
       $TablesCount = count($tables);
@@ -178,8 +177,7 @@ class PhpLiveDbBackup{
       if($Progress != 0):
         printf('%d%% ', $TablesLeft++ * 100 / $TablesCount);
       endif;
-      $stm = $pdo->prepare('lock table ' . $table[0] . ' write');
-      $stm->execute();
+      $pdo->exec('lock table ' . $table[0] . ' write');
 
       $consult = $this->PhpLiveDb->Select($table[0]);
       $rows = $consult->Run();
@@ -194,10 +192,9 @@ class PhpLiveDbBackup{
         $file = fopen($Folder . $table[0] . '.sql', 'w');
         $this->Delete[] = $Folder . $table[0] . '.sql';
 
-        $stm = $pdo->prepare('checksum table ' . $table[0]);
-        $stm->execute();
-        $temp = $stm->fetchAll(PDO::FETCH_ASSOC);
         fwrite($file, '-- Table checksum ' . $temp[0]['Checksum'] . PHP_EOL . PHP_EOL);
+        $stm = $pdo->query('checksum table ' . $table[0]);
+        $temp = $stm->fetchColumn(1);
 
         foreach($rows as $row):
           $cols = '';
@@ -217,8 +214,7 @@ class PhpLiveDbBackup{
             printf("\r%d%%", ++$RowsLeft * 100 / $RowsCount);
           endif;
         endforeach;
-        $stm = $pdo->prepare('unlock tables');
-        $stm->execute();
+        $pdo->exec('unlock tables');
         fclose($file);
         $this->Zip->addFile($Folder . $table[0] . '.sql', $table[0] . '.sql');
         $this->Zip->setEncryptionName($table[0] . '.sql', ZipArchive::EM_AES_256);
