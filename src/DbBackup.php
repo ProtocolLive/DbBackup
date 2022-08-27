@@ -1,7 +1,7 @@
 <?php
 //Protocol Corporation Ltda.
 //https://github.com/ProtocolLive/PhpLive/
-//Version 2022.08.27.04
+//Version 2022.08.27.05
 
 use ProtocolLive\PhpLiveDb\PhpLiveDb;
 
@@ -168,14 +168,14 @@ class PhpLiveDbBackup{
     $pdo = $this->PhpLiveDb->GetCustom();
     $stm = $pdo->query("show tables like '%'");
     $tables = $stm->fetchAll(PDO::FETCH_BOTH);
-    if($Progress != 0):
+    if($Progress !== 0):
       $TablesCount = count($tables);
       $TablesLeft = 0;
       printf('%d %s:' . PHP_EOL, $TablesCount, $TranslateTables);
     endif;
     foreach($tables as $table):
-      if($Progress != 0):
         printf('%d%% ', $TablesLeft++ * 100 / $TablesCount);
+      if($Progress !== 0):
       endif;
       $pdo->exec('lock table ' . $table[0] . ' write');
 
@@ -183,7 +183,7 @@ class PhpLiveDbBackup{
       $rows = $consult->Run();
       $RowsCount = count($rows);
       $RowsLeft = 0;
-      if($Progress == 2):
+      if($Progress === 2):
         printf('%s (%d %s)' . PHP_EOL, $table[0], $RowsCount, $TranslateRows);
       endif;
       if($RowsCount === 0):
