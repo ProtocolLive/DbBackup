@@ -1,11 +1,14 @@
 <?php
 //Protocol Corporation Ltda.
 //https://github.com/ProtocolLive/PhpLive/
-//Version 2022.08.27.08
+//Version 2022.08.27.09
 
+namespace ProtocolLive\DbBackup;
 use ProtocolLive\PhpLiveDb\PhpLiveDb;
+use \PDO;
+use \ZipArchive;
 
-class PhpLiveDbBackup{
+class DbBackup{
   private PhpLiveDb $PhpLiveDb;
   private array $Delete = [];
   private string $File;
