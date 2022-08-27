@@ -1,12 +1,12 @@
 <?php
 //Protocol Corporation Ltda.
 //https://github.com/ProtocolLive/PhpLive/
-//Version 2022.08.27.00
+//Version 2022.08.27.01
 
 use ProtocolLive\PhpLiveDb\PhpLiveDb;
 
 class PhpLiveDbBackup{
-  private ?PhpLiveDb $PhpLiveDb = null;
+  private PhpLiveDb $PhpLiveDb;
   private array $Delete = [];
   private string $File;
   private ZipArchive $Zip;
@@ -20,10 +20,7 @@ class PhpLiveDbBackup{
     int $Progress = 1,
     string $TranslateTables = 'tables',
     string $TranslateFk = 'foreign keys'
-  ):string|false{
-    if($this->PhpLiveDb === null):
-      return false;
-    endif;
+  ):string{
     if(PHP_SAPI === 'cli'):
       restore_error_handler();
       restore_exception_handler();
@@ -160,9 +157,6 @@ class PhpLiveDbBackup{
     string $TranslateTables = 'tables',
     string $TranslateRows = 'rows'
   ):string{
-    if($this->PhpLiveDb === null):
-      return false;
-    endif;
     if(PHP_SAPI === 'cli'):
       restore_error_handler();
       restore_exception_handler();
