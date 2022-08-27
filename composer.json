@@ -3,7 +3,8 @@
     "description": "A library to database backup",
     "type": "library",
     "require": {
-        "php": ">=8.1"
+        "php": ">=8",
+        "protocollive/phplivedb": "*"
     },
     "license": "MIT",
     "authors": [
