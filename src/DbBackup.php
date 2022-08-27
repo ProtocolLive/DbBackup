@@ -1,7 +1,7 @@
 <?php
 //Protocol Corporation Ltda.
 //https://github.com/ProtocolLive/PhpLive/
-//Version 2022.08.27.05
+//Version 2022.08.27.06
 
 use ProtocolLive\PhpLiveDb\PhpLiveDb;
 
@@ -174,8 +174,8 @@ class PhpLiveDbBackup{
       printf('%d %s:' . PHP_EOL, $TablesCount, $TranslateTables);
     endif;
     foreach($tables as $table):
-        printf('%d%% ', $TablesLeft++ * 100 / $TablesCount);
       if($Progress !== 0):
+        printf('%.2f%% ', $TablesLeft++ * 100 / $TablesCount);
       endif;
       $pdo->exec('lock table ' . $table[0] . ' write');
 
@@ -211,7 +211,7 @@ class PhpLiveDbBackup{
           $values = substr($values, 0, -1);
           fwrite($file, 'insert into ' . $table[0] . '(' . $cols . ') values(' . $values . ');' . PHP_EOL);
           if($Progress == 2 and PHP_SAPI === 'cli'):
-            printf("\r%d%%", ++$RowsLeft * 100 / $RowsCount);
+            printf("\r%.2f%%", ++$RowsLeft * 100 / $RowsCount);
           endif;
         endforeach;
         $pdo->exec('unlock tables');
