@@ -1,7 +1,7 @@
 <?php
 //Protocol Corporation Ltda.
 //https://github.com/ProtocolLive/PhpLive/
-//Version 2022.08.27.01
+//Version 2022.08.27.02
 
 use ProtocolLive\PhpLiveDb\PhpLiveDb;
 
@@ -11,7 +11,7 @@ class PhpLiveDbBackup{
   private string $File;
   private ZipArchive $Zip;
 
-  public function __construct(PhpLiveDb &$PhpLiveDb){
+  public function __construct(PhpLiveDb $PhpLiveDb){
     $this->PhpLiveDb = $PhpLiveDb;
   }
 
