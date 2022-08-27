@@ -1,7 +1,7 @@
 <?php
 //Protocol Corporation Ltda.
 //https://github.com/ProtocolLive/PhpLive/
-//Version 2022.08.27.06
+//Version 2022.08.27.07
 
 use ProtocolLive\PhpLiveDb\PhpLiveDb;
 
@@ -192,9 +192,9 @@ class PhpLiveDbBackup{
         $file = fopen($Folder . $table[0] . '.sql', 'w');
         $this->Delete[] = $Folder . $table[0] . '.sql';
 
-        fwrite($file, '-- Table checksum ' . $temp[0]['Checksum'] . PHP_EOL . PHP_EOL);
         $stm = $pdo->query('checksum table ' . $table[0]);
         $temp = $stm->fetchColumn(1);
+        fwrite($file, '-- Table checksum ' . $temp . PHP_EOL . PHP_EOL);
 
         foreach($rows as $row):
           $cols = '';
