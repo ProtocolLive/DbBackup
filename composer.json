@@ -1,0 +1,20 @@
+{
+    "name": "protocollive/dbbackup",
+    "description": "A library to database backup",
+    "type": "library",
+    "require": {
+        "php": ">=8.1"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Protocol Corporation",
+            "email": "protocollive@outlook.com"
+        }
+    ],
+    "autoload": {
+        "classmap": [
+            "src/"
+        ]
+    }
+}
