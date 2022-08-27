@@ -1,8 +1,9 @@
 <?php
 //Protocol Corporation Ltda.
 //https://github.com/ProtocolLive/PhpLive/
-//Version 2022.08.09.00
-//For PHP >= 8.1
+//Version 2022.08.27.00
+
+use ProtocolLive\PhpLiveDb\PhpLiveDb;
 
 class PhpLiveDbBackup{
   private ?PhpLiveDb $PhpLiveDb = null;
