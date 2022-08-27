@@ -1,7 +1,7 @@
 <?php
 //Protocol Corporation Ltda.
 //https://github.com/ProtocolLive/PhpLive/
-//Version 2022.08.27.07
+//Version 2022.08.27.08
 
 use ProtocolLive\PhpLiveDb\PhpLiveDb;
 
@@ -219,7 +219,9 @@ class PhpLiveDbBackup{
         $this->Zip->addFile($Folder . $table[0] . '.sql', $table[0] . '.sql');
         $this->Zip->setEncryptionName($table[0] . '.sql', ZipArchive::EM_AES_256);
       endif;
-      echo PHP_EOL;
+      if($Progress > 0):
+        echo PHP_EOL;
+      endif;
     endforeach;
     echo 'Done' . PHP_EOL;
     $this->ZipClose();
