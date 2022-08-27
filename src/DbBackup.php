@@ -1,7 +1,7 @@
 <?php
 //Protocol Corporation Ltda.
 //https://github.com/ProtocolLive/PhpLive/
-//Version 2022.08.27.02
+//Version 2022.08.27.03
 
 use ProtocolLive\PhpLiveDb\PhpLiveDb;
 
@@ -160,6 +160,9 @@ class PhpLiveDbBackup{
     if(PHP_SAPI === 'cli'):
       restore_error_handler();
       restore_exception_handler();
+    endif;
+    if(($_SERVER['CronEmail'] ?? null) === 'false'):
+      $Progress = 0;
     endif;
     $this->ZipOpen($Folder, 1);
     $pdo = $this->PhpLiveDb->GetCustom();
