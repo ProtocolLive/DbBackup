@@ -8,7 +8,7 @@ use PDO;
 use ZipArchive;
 
 /**
- * @version 2024.01.15.00
+ * @version 2024.01.18.00
  */
 final class DbBackup{
   private array $Delete = [];
@@ -300,7 +300,9 @@ final class DbBackup{
     $this->File .= '.zip';
     $this->Zip->open($Folder . '/' . $this->File, ZipArchive::CREATE);
     $this->Zip->setPassword($this->Password);
-    echo 'Saving in ' . $Folder . '/' . $this->File . PHP_EOL;
+    if($this->Progress > 0):
+      echo 'Saving in ' . $Folder . '/' . $this->File . PHP_EOL;
+    endif;
   }
 
   private function ZipClose():void{
